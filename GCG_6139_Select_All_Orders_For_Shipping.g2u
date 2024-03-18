@@ -1,0 +1,70 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Bryan Pham
+'10/08/2020
+'Add a button that would allow to select all orders at once
+
+V.Local.sError.Declare
+V.Local.iCount.Declare
+v.Local.iRows.Declare
+v.Local.sRows.Declare
+V.Local.sTitles.Declare
+v.Local.sTypes.Declare
+
+
+f.Intrinsic.Control.SelectCase(v.Caller.Hook)
+	f.Intrinsic.Control.Case(39201)
+		v.Passed.000225.Set("All Orders")
+	f.Intrinsic.Control.Case(39202)
+		f.Intrinsic.Control.CallSub(shipbdf)
+f.Intrinsic.Control.EndSelect
+
+Program.Sub.Main.End
+
+Program.Sub.shipbdf.Start
+V.Local.sError.Declare
+V.Local.iCount.Declare
+v.Local.iRows.Declare
+v.Local.sRows.Declare
+V.Local.sTitles.Declare
+v.Local.sTypes.Declare
+V.Local.sValue.Declare
+V.Local.sSplit.Declare
+'================================================================
+'load BDF to datatable
+f.Intrinsic.BDF.Load("BDFOders","AUX001")
+F.Intrinsic.BDF.ReadRowCount("BDFOders", V.Local.iRows)
+F.Intrinsic.Math.Sub(V.Local.iRows, 1, V.Local.iRows)
+F.Data.DataTable.Create("ORDERS")
+F.Data.DataTable.AddColumn("ORDERS", "ROW", "String", "")
+
+F.Intrinsic.Control.For(V.Local.iCount, 0, V.Local.iRows, 1)
+	F.Intrinsic.BDF.TextMatrix("BDFOders", 1, V.Local.iCount, V.Local.sValue)
+	'get all rows
+	F.Intrinsic.BDF.ReadRow("BDFOders", V.Local.iCount, V.Local.sValue)
+	F.Data.DataTable.AddRow("ORDERS", "ROW", V.Local.sValue)
+F.Intrinsic.Control.Next(V.Local.iCount)
+
+'rebuild BDF
+v.Local.iCount.Set(0)
+f.Intrinsic.BDF.Clone("BDFOders","bdfNew")
+f.Intrinsic.Control.For(v.Local.iCount,0,v.DataTable.ORDERS.RowCount--,1)
+	F.Intrinsic.String.Split(V.DataTable.ORDERS(V.Local.iCount).ROW!FieldValTrim, "|~|", V.Local.sSplit)
+'set Select column to Y	
+	V.Local.sSplit(0).Set("Y")
+	F.Intrinsic.String.Join(V.Local.sSplit, "|~|", V.Local.sValue)
+	F.Intrinsic.BDF.WriteRow("bdfNew", V.Local.sValue)
+f.Intrinsic.Control.Next(v.Local.iCount)
+V.Local.sSplit.Redim(0, 0)
+
+F.Data.DataTable.Close("ORDERS")
+
+F.Intrinsic.BDF.Save("bdfNew", "AUX001")
+
+'===============================================================
+
+f.Intrinsic.Control.End
+
+Program.Sub.shipbdf.End
